@@ -1,0 +1,82 @@
+package main
+
+import "fmt"
+import "log" 
+import "bytes"
+import "os"
+
+import (
+
+   "github.com/consensys/gnark/frontend"
+   "github.com/consensys/gnark-crypto/ecc"
+    "github.com/consensys/gnark/backend/plonk"
+    "github.com/consensys/gnark/frontend/cs/scs"
+    "math/big"
+    "github.com/consensys/gnark-crypto/ecc/bn254/fr/kzg"
+    kzg2 "github.com/consensys/gnark-crypto/kzg"
+)
+
+const h = INSERT_VARIABLE
+const n = INSERT_VARIABLE
+
+type Circuit struct {
+   Hash [h]frontend.Variable `gnark:",public"` 
+    RedactedParts [n]frontend.Variable 
+}
+
+func (circuit *Circuit) Define(api frontend.API) error {
+   var A [h][n]frontend.Variable = [h][n]frontend.VariableINSERT_VARIABLE
+
+   for i := 0; i < h; i++ {
+    var sum frontend.Variable  = 0
+        for j := 0; j< n; j++ {
+            sum = api.Add(sum, api.Mul(A[i][j], circuit.RedactedParts[j]))
+        }
+        api.AssertIsEqual(circuit.Hash[i], sum)
+    }
+
+    return nil
+}
+
+func main() {
+   var prefix = os.Args[1]
+
+   var circuit Circuit
+
+   ccs, err := frontend.Compile(ecc.BN254, scs.NewBuilder, &circuit)
+   if err != nil {
+      fmt.Println("circuit compilation error")
+   }
+
+   var srs  = kzg2.NewSRS(ecc.BN254)
+   if _, err := os.Stat("srs.txt"); err == nil {
+      srsData, _ := os.ReadFile("srs.txt")
+      srs.ReadFrom(bytes.NewReader(srsData))
+   } else {
+      srs, _ = kzg.NewSRS(17000000, big.NewInt(100))
+      var srsBuf bytes.Buffer
+      srs.WriteTo(&srsBuf)
+      os.WriteFile("srs.txt", srsBuf.Bytes(), 0644)
+   }
+
+   
+
+   assignment := Circuit{Hash: [h]frontend.VariableINSERT_VARIABLE,
+   RedactedParts: [n]frontend.VariableINSERT_VARIABLE}
+
+   witnessFull, err := frontend.NewWitness(&assignment, ecc.BN254)
+
+   pk, _, err := plonk.Setup(ccs, srs)
+   if err != nil {
+      log.Fatal(err)
+   }
+
+   proof, err := plonk.Prove(ccs, pk, witnessFull)
+   if err != nil {
+      log.Fatal(err)
+   }
+
+   var proofBuf bytes.Buffer
+   proof.WriteTo(&proofBuf)
+   os.WriteFile(prefix + "_proof.txt", proofBuf.Bytes(), 0644)
+}
