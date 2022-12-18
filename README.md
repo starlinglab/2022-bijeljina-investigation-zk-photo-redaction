@@ -1,53 +1,55 @@
-# ZK Photo Redaction
+# 2022 Bijeljina Investigation: ZK Photo Redaction
 
-This Example uses the filename `ZKPHOTO.png`. Take note that many of the parameters do not include an extension
+This repository contains the code used to generate and to verify zero knowledge proofs in our _2022 Bijeljina Investigation_. The process is used to provably redact regions in authenticated images before they are published.
 
-`ZKPHOTO.png` Photo to be redacted.  
-`ZKPHOTO_coords.txt` Location of the redaction area on the photo. Each redaction area is a square and listed on a new line in the format of `x` `y` `width` `height`. For example, a box starting at coordinates x `10px` and y `15px` with a width of `5px` and height of `20px` will be represented as `10 15 5 20`  
-`ZKPHOTO_hash.txt` Contains public hash 
-`ZKPHOTO_proof.txt` ZK Proof of redaction  
-`ZKPHOTO_red.png` Redacted photo  
-`ZKPHOTO_main.go` Gnark go code to produce proof  
-`verify/ZKPHOTO_main.go` Gnark go code to verify proof  
+The following example uses the filename `ZKPHOTO`, and the following files are involved in the process:
+- `ZKPHOTO.png`: photo to be redacted.
+- `ZKPHOTO_coords.txt`: location of the redaction area on the photo. Each redaction area is a square and listed on a new line in the format of `x` `y` `width` `height`. For example, a box starting at coordinates `x=10px` and `y=15px` with a width of `5px` and height of `20px` will be represented as `10 15 5 20`.
+- `ZKPHOTO_hash.txt`: public hash.
+- `ZKPHOTO_proof.txt`: ZK proof of redaction.
+- `ZKPHOTO_red.png`: redacted photo.
+- `ZKPHOTO_main.go`: gnark Go code to produce the proof.
+- `verify/ZKPHOTO_main.go`: gnark Go code to verify proof.
 
+## Creating ZK redaction and generating proof files
 
-## Create ZK Redaction and generate proving files
-
-Two files required in the same folder
+Two source files are required in the same folder:
 - `ZKPHOTO.png`
-- `ZKPHOTO_coords.txt` 
+- `ZKPHOTO_coords.txt`
 
-The code generates the following files
+The code generates the following files:
 - `ZKPHOTO_hash.txt`
 - `ZKPHOTO_red.png`
 - `ZKPHOTO_proof.txt`
 
-Following files are generated but can be purged 
-- `ZKPHOTO_main.go` (used to run go)
-- `srs.txt` (Used to speed up subsequent runs)
-- `A.txt` (Used to speed up subsequent runs)
+The following files are generated but can be purged:
+- `ZKPHOTO_main.go` (used to run Go)
+- `srs.txt` (used to speed up subsequent runs)
+- `A.txt` (used to speed up subsequent runs)
 
+Run:
 ```
-# Generate proving go code
-python3 redact.py ZKPHOTO.png
+# Generate proving Go code
+python3 redact.py ZKPHOTO
 
-# Run proving code to generate proof in 
+# Run proving Go code to generate proof
 go mod tidy
 go run ZKPHOTO_main.go ZKPHOTO
 ```
 
-## Verifying ZK Redaction using proving files
+## Verifying ZK redaction using proof files
 
-Three files required in the same folder
+Three files are required in the same folder:
 - `ZKPHOTO_hash.txt`
-- `ZKPHOTO_red.png`
 - `ZKPHOTO_proof.txt`
+- `ZKPHOTO_red.png`
 
+Run:
 ```
-# Generate verifying go code 
+# Generate verifying Go code 
 python3 verify.py ZKPHOTO
 
-# Run verification code
+# Run verifying Go code to verify proofs
 cd verify
 go mod tidy
 go run ZKPHOTO_main.go ZKPHOTO
